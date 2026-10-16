@@ -1,0 +1,124 @@
+# bruggy-memory stack.
+#
+# Runs the ingestion/pull service (bruggy-memory) alongside the Zep RAG stack
+# (zep-cloud, zep-nlp-server, postgres, valkey) on Bruggy's `brussy-net`.
+#
+#   docker compose up --build
+#
+# Secrets come from a gitignored env file:   docker compose --env-file .env up
+# See env/.env.example for the full variable list.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Bruggy Memory service (this repo)
+  # ---------------------------------------------------------------------------
+  bruggy-memory:
+    build:
+      context: .
+      dockerfile: src/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-0.1.0}
+    image: clintshed/bruggy-memory:${APP_VERSION:-0.1.0}
+    container_name: bruggy-memory
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ZEP_API_URL: http://zep-api:8080
+      ZEP_EMBEDDINGS_URL: http://zep-nlp-server:8080
+      INSTANCE_ID: bruggy-memory
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      VERBOSE: ${VERBOSE:-0}
+    ports:
+      - "8000:8000"
+    volumes:
+      - memory-data:/app/data
+      - memory-staging:/app/staging
+      - memory-logs:/app/logs
+    depends_on:
+      zep-api:
+        condition: service_healthy
+    networks:
+      - brussy-net
+    labels:
+      service: "bruggy-memory"
+      version: "${APP_VERSION:-0.1.0}"
+
+  # ---------------------------------------------------------------------------
+  # Zep stack (GetZep reference images; ENABLE_EMBEDDINGS=true).
+  # Mirrors the "Zep Dockerized AI Memory System Guide" (attachment t_ca870b69).
+  # ---------------------------------------------------------------------------
+  zep-postgres:
+    image: postgres:16-alpine
+    container_name: zep-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zep
+      POSTGRES_PASSWORD: zep
+      POSTGRES_DB: zep
+    volumes:
+      - zep-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zep -d zep"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - brussy-net
+
+  zep-valkey:
+    image: valkey/valkey:8-alpine
+    container_name: zep-valkey
+    restart: unless-stopped
+    volumes:
+      - zep-valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - brussy-net
+
+  zep-api:
+    image: ghcr.io/getzep/zep-cloud:latest
+    container_name: zep-api
+    restart: unless-stopped
+    environment:
+      ZEP_POSTGRES_URL: postgres://zep:zep@zep-postgres:5432/zep
+      ZEP_VALKEY_URL: valkey://zep-valkey:6379
+      ZEP_EMBEDDINGS_URL: http://zep-nlp-server:8080
+      ENABLE_EMBEDDINGS: "true"
+      ZEP_AUTH_SECRET: ${ZEP_AUTH_SECRET:-localdevapikey}
+    volumes:
+      - zep-models:/root/.cache
+    depends_on:
+      zep-postgres:
+        condition: service_healthy
+      zep-valkey:
+        condition: service_healthy
+    networks:
+      - brussy-net
+
+  # Local extraction / NLP server for embeddings + fact extraction.
+  zep-nlp-server:
+    image: ghcr.io/getzep/zep-nlp-server:latest
+    container_name: zep-nlp-server
+    restart: unless-stopped
+    volumes:
+      - zep-nlp-models:/root/.cache
+    networks:
+      - brussy-net
+
+networks:
+  brussy-net:
+    external: true
+
+volumes:
+  memory-data:
+  memory-staging:
+  memory-logs:
+  zep-postgres-data:
+  zep-valkey-data:
+  zep-models:
+  zep-nlp-models:

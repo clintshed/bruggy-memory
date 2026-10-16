@@ -1,0 +1,22 @@
+# bruggy-memory — selectable wiki pull sources (design §4.4).
+#
+# Each source is a MediaWiki site the daily pull job can crawl. The pull layer
+# (pull/wiki_client) talks to `base_url + "/w/api.php"` (or "/api.php"); set the
+# correct path. `categories` is the pull scope — the job pulls every page in
+# every listed category. `default_source` is used when `main.py` isn't told which
+# source to pull. `user_agent` overrides the default browser UA (usually leave it
+# unset). Secrets (Discord bot token) live in the environment, never here.
+default_source: wiki-gg
+
+sources:
+  - name: wiki-gg
+    base_url: "https://wiki.gg"
+    user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    categories:
+      - "General"
+      - "FAQ"
+  - name: 7dtd
+    base_url: "https://wiki.7daytodie.com"
+    categories:
+      - "Category:Guides"
+      - "Category:Tutorials"

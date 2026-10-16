@@ -1,0 +1,45 @@
+name: build-number
+
+# Mirrors discord-brussy-forever: bump a monotonically increasing build number on
+# every push to main and commit it back, so the README's "Current Build" always
+# reflects the latest shipped build.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bump-build-number:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read current build number
+        id: read
+        run: |
+          file=".github/build-number.txt"
+          if [ -f "$file" ]; then
+            current=$(tr -dc '0-9' < "$file")
+          else
+            current=0
+          fi
+          next=$((current + 1))
+          echo "current=${current}" >> "$GITHUB_OUTPUT"
+          echo "next=${next}" >> "$GITHUB_OUTPUT"
+          echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Write and commit incremented build number
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          file=".github/build-number.txt"
+          echo "${{ steps.read.next }}" > "$file"
+          echo "# Build ${{ steps.read.next }}" >> "$file"
+          echo "${{ steps.read.next }}  ${{ steps.read.commit }}  $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$file"
+          git add "$file"
+          git commit -m "chore: bump build number to ${{ steps.read.next }}" || echo "nothing to commit"
+          git push

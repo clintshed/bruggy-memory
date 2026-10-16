@@ -1,0 +1,12 @@
+[project]
+name = "bruggy-memory"
+version = "0.1.0"
+description = "Discord + wiki memory service for Bruggy: Zep-backed RAG ingestion, daily MediaWiki pull, and a query API."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+# The app + tests live under src/ and import as `from pull.X`, `from ingest`,
+# `from zep_client`, etc. Point pytest at src so those imports resolve.
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+addopts = "-q"

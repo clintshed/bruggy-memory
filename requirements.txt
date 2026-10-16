@@ -1,0 +1,19 @@
+# bruggy-memory runtime dependencies.
+#
+# Installed in the container image (see src/Dockerfile) and for local dev:
+#   pip install -r requirements.txt
+
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30,<1.0
+httpx>=0.27,<1.0
+pydantic>=2.7,<3.0
+pyyaml>=6.0,<7.0
+apscheduler>=3.10,<4.0
+python-multipart>=0.0.9
+
+# Optional: structlog for richer structured logging. The app degrades to the
+# stdlib json formatter when structlog is absent, so it is not required.
+# structlog>=24.1
+
+# Local dev / CI test tooling.
+pytest>=8.0

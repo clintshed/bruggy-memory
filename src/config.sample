@@ -1,0 +1,23 @@
+{
+  "zep_api_url": "http://zep-api:8080",
+  "zep_api_key": "localdevapikey",
+  "zep_baseline_user_id": "__baseline__",
+  "zep_baseline_session_id": "baseline",
+  "zep_embedding_model": "bge-large-en-v1.5",
+  "zep_nlp_model": "zep-nlp-model",
+  "zep_embedding_dim": 1024,
+  "zep_embedding_chunk_size": 128,
+  "discord_bot_token": null,
+  "max_segment_tokens": 128,
+  "segment_token_overlap": 20,
+  "max_chat_chunk_chars": 1000,
+  "chat_segment_min_chars": 40,
+  "default_n_results": 10,
+  "query_search_scope": ["facts", "episodes", "segments", "entity_relationships"],
+  "log_level": "INFO",
+  "log_dir": "./logs",
+  "log_rotation": "20MB",
+  "log_retention": 14,
+  "log_format": "json",
+  "staging_dir": "./staging"
+}
